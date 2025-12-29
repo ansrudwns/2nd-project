@@ -101,7 +101,9 @@ export default function SignupModal({
     setIsCheckingEmail(true);
     try {
       const response = await axios.post(
-        "http://localhost:8000/api/v1/auth/check-email",
+        `${
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+        }/api/v1/auth/check-email`,
         { email }
       );
       if (response.data.exists) {
@@ -155,11 +157,16 @@ export default function SignupModal({
       // Artificial delay for UX (1.5s)
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      await axios.post("http://localhost:8000/api/v1/auth/signup", {
-        full_name: name,
-        email,
-        password,
-      });
+      await axios.post(
+        `${
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+        }/api/v1/auth/signup`,
+        {
+          full_name: name,
+          email,
+          password,
+        }
+      );
       alert("회원가입이 완료되었습니다!");
       onClose();
     } catch (error: any) {

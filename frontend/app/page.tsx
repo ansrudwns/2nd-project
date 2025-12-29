@@ -125,16 +125,23 @@ export default function Home() {
       formData.append("password", loginPassword);
 
       const res = await axios.post(
-        "http://localhost:8000/api/v1/auth/login",
+        `${
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+        }/api/v1/auth/login`,
         formData
       );
 
       const token = res.data.access_token;
 
       // Fetch User Info to get Name
-      const userRes = await axios.get("http://localhost:8000/api/v1/auth/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const userRes = await axios.get(
+        `${
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+        }/api/v1/auth/me`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       const userInfo = {
         email: userRes.data.email,
@@ -221,8 +228,12 @@ export default function Home() {
       // Endpoint Switching
       const endpoint =
         selectedService === "labor"
-          ? "http://localhost:8000/api/v1/analyze/labor"
-          : "http://localhost:8000/api/v1/analyze";
+          ? `${
+              process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+            }/api/v1/analyze/labor`
+          : `${
+              process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+            }/api/v1/analyze`;
 
       const response = await axios.post(endpoint, formData, {
         headers: {
@@ -300,9 +311,14 @@ export default function Home() {
     setIsHistoryLoading(true);
     try {
       // Added trailing slash to avoid 307 Redirect issues
-      const res = await axios.get("http://localhost:8000/api/v1/history/", {
-        headers: { Authorization: `Bearer ${user.token}` },
-      });
+      const res = await axios.get(
+        `${
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+        }/api/v1/history/`,
+        {
+          headers: { Authorization: `Bearer ${user.token}` },
+        }
+      );
       setHistoryList(res.data);
     } catch (err: any) {
       console.error(err);
@@ -322,9 +338,14 @@ export default function Home() {
     if (!confirm(t("delete_confirm"))) return;
 
     try {
-      await axios.delete(`http://localhost:8000/api/v1/history/${analysisId}`, {
-        headers: { Authorization: `Bearer ${user.token}` },
-      });
+      await axios.delete(
+        `${
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+        }/api/v1/history/${analysisId}`,
+        {
+          headers: { Authorization: `Bearer ${user.token}` },
+        }
+      );
       // Remove from list locally
       setHistoryList((prev) => prev.filter((item) => item.id !== analysisId));
       alert(t("delete_success"));
@@ -348,9 +369,14 @@ export default function Home() {
       // Artificial delay for UX (1.5s)
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      await axios.delete("http://localhost:8000/api/v1/auth/me", {
-        headers: { Authorization: `Bearer ${user.token}` },
-      });
+      await axios.delete(
+        `${
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+        }/api/v1/auth/me`,
+        {
+          headers: { Authorization: `Bearer ${user.token}` },
+        }
+      );
       alert(t("delete_account_success"));
       handleLogout();
     } catch (err) {
