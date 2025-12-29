@@ -20,7 +20,7 @@ class VisualizerService:
             from pypdf import PdfReader, PdfWriter
             from reportlab.pdfgen import canvas
             from reportlab.lib.pagesizes import letter
-            import io
+
 
             # Check if input is PDF (by magic bytes or trying to read)
             is_pdf = False
