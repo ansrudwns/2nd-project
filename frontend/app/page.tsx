@@ -540,7 +540,6 @@ export default function Home() {
                   )}
                 </button>
               </form>
-              <p className="mt-8 text-sm text-gray-400">{t("demo_account")}</p>
             </div>
           </div>
         )}
@@ -1118,6 +1117,7 @@ export default function Home() {
                     <div
                       key={item.id}
                       onClick={() => {
+                        setSelectedService(isLease ? "rent" : "labor");
                         setLanguage(
                           item.result_json?.summary?.language || "ko"
                         );
