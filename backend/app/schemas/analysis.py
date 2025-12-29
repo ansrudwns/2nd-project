@@ -24,6 +24,7 @@ class AnalysisSummary(BaseModel):
     risk_count: int
     highest_severity: str
     language: str = "ko"
+    service_type: str = "rent" # rent | labor
 
 class AnalysisResultResponse(BaseModel):
     analysis_id: str

@@ -909,7 +909,8 @@ async def analyze_documents(
             summary={
                 "risk_count": len([r for r in ctx['rule_results'] if r.status == 'FAIL']),
                 "highest_severity": "HIGH",
-                "language": ctx.get('target_language', 'ko')
+                "language": ctx.get('target_language', 'ko'),
+                "service_type": "rent"
             },
             rules=cleaned_rules,
             documents={
@@ -1594,7 +1595,9 @@ async def analyze_labor_documents(
             summary={
                 "risk_count": len(failed_rules),
                 "highest_severity": "HIGH" if any(r.severity == 'HIGH' for r in failed_rules) else "LOW",
-                "language": target_lang
+                "highest_severity": "HIGH" if any(r.severity == 'HIGH' for r in failed_rules) else "LOW",
+                "language": target_lang,
+                "service_type": "labor"
             },
             rules=ctx['rule_results'],
             documents={

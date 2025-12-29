@@ -1108,7 +1108,10 @@ export default function Home() {
                   const langLabel = langMap[langCode] || langCode.toUpperCase();
 
                   // Contract Type Translation
-                  const isLease = item.result_json?.documents?.registry_url;
+                  const serviceType = item.result_json?.summary?.service_type;
+                  const isLease =
+                    serviceType === "rent" ||
+                    (!serviceType && item.result_json?.documents?.registry_url);
                   const contractType = isLease
                     ? t("contract_label")
                     : t("contract_label_labor");
