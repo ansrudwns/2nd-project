@@ -1,15 +1,12 @@
 name: Trigger auto deployment for containerapps-team5
 
-# When this action will be executed
 on:
-  # Automatically trigger it when detected changes in repo
   push:
     branches: [main]
     paths:
       - "**"
       - ".github/workflows/containerapps-team5-AutoDeployTrigger-a1b613ab-1f6e-4f46-b78d-373504e952af.yml"
 
-  # Allow manual trigger
   workflow_dispatch:
 
 jobs:
@@ -20,19 +17,28 @@ jobs:
       - name: Checkout to the branch
         uses: actions/checkout@v2
 
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.CONTAINERAPPSTEAM5_REGISTRY_USERNAME }}
+          password: ${{ secrets.CONTAINERAPPSTEAM5_REGISTRY_PASSWORD }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: m86865/containerapps-team5:${{ github.sha }}
+
       - name: Azure Login
-        uses: azure/login@v2
+        uses: azure/login@v1
         with:
           creds: ${{ secrets.CONTAINERAPPSTEAM5_AZURE_CREDENTIALS }}
 
-      - name: Build and push container image to registry
-        uses: azure/container-apps-deploy-action@v2
+      - name: Deploy to Azure Container Apps
+        uses: azure/container-apps-deploy-action@v1
         with:
-          appSourcePath: backend
-          dockerfilePath: Dockerfile
-          registryUrl: docker.io
-          registryUsername: ${{ secrets.CONTAINERAPPSTEAM5_REGISTRY_USERNAME }}
-          registryPassword: ${{ secrets.CONTAINERAPPSTEAM5_REGISTRY_PASSWORD }}
           containerAppName: containerapps-team5
           resourceGroup: 8ai-2nd-team5
-          imageToBuild: m86865/containerapps-team5:${{ github.sha }}
+          imageToDeploy: m86865/containerapps-team5:${{ github.sha }}
