@@ -557,7 +557,7 @@ export default function Home() {
                 className="flex-1 bg-white p-8 rounded-3xl border border-gray-100 shadow-xl hover:shadow-2xl hover:border-gray-200 transition-all cursor-pointer group transform hover:-translate-y-1 relative overflow-hidden"
               >
                 <div className="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-green-600 transition-colors">
-                  <Briefcase className="w-8 h-8 text-green-600 group-hover:text-white transition-colors" />
+                  <FileText className="w-8 h-8 text-green-600 group-hover:text-white transition-colors" />
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-green-700">
                   {t("service_labor_title")}

@@ -36,7 +36,7 @@
 
 ---
 
-## 🛠 Tech Stack (기술 스택)
+## Tech Stack (기술 스택)
 
 ### Frontend
 
@@ -53,7 +53,7 @@
 
 ---
 
-## 🏗 System Architecture & Workflow (시스템 구조 및 분석 프로세스)
+## System Architecture & Workflow (시스템 구조 및 분석 프로세스)
 
 ### 1. Data Storage Strategy (데이터 저장 전략)
 
@@ -85,7 +85,7 @@
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```bash
 2nd_project2/
