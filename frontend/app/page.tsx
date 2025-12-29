@@ -1108,10 +1108,21 @@ export default function Home() {
                   const langLabel = langMap[langCode] || langCode.toUpperCase();
 
                   // Contract Type Translation
+                  // Contract Type Translation
                   const serviceType = item.result_json?.summary?.service_type;
-                  const isLease =
-                    serviceType === "rent" ||
-                    (!serviceType && item.result_json?.documents?.registry_url);
+                  // Debugging Logic
+                  const hasRegistry = Boolean(
+                    item.result_json?.documents?.registry_url
+                  );
+
+                  let isLease = false;
+                  if (serviceType === "rent") isLease = true;
+                  else if (serviceType === "labor") isLease = false;
+                  else {
+                    // Fallback for old data
+                    isLease = hasRegistry;
+                  }
+
                   const contractType = isLease
                     ? t("contract_label")
                     : t("contract_label_labor");
@@ -1120,10 +1131,18 @@ export default function Home() {
                     <div
                       key={item.id}
                       onClick={() => {
+                        console.log("History Item Clicked:", item);
+                        console.log("Service Type:", serviceType);
+                        console.log("Has Registry:", hasRegistry);
+                        console.log("Resolved isLease:", isLease);
+
                         setSelectedService(isLease ? "rent" : "labor");
-                        setLanguage(
-                          item.result_json?.summary?.language || "ko"
-                        );
+
+                        const langToSet =
+                          item.result_json?.summary?.language || "ko";
+                        console.log("Setting Language to:", langToSet);
+                        setLanguage(langToSet);
+
                         setResult(item.result_json);
                         setViewerTab("contract");
                         setView("result");
