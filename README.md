@@ -9,7 +9,51 @@
 
 ---
 
-## System Architecture & Workflow (시스템 구조 및 분석 프로세스)
+## ✨ Key Features (주요 기능)
+
+### 1. 🏠 부동산 임대차 계약 분석 (Lease Contract Analysis)
+
+- **계약서 & 등기부등본 교차 검증**: 주소, 소유자 일치 여부를 자동으로 확인합니다.
+- **위험 요소 탐지**: 근저당권, 위반건축물, 깡통전세 위험 등을 정밀 진단합니다.
+- **특약사항 독소조항 분석**: 임차인에게 불리한 특약사항을 AI가 찾아냅니다.
+
+### 2. 💼 근로 계약 분석 (Labor Contract Analysis)
+
+- **근로기준법 준수 여부**: 최저임금, 근로시간, 유급휴일 등 법적 필수 항목을 체크합니다.
+- **불공정 조항 탐지**: 위약금 예정, 강제 저축 등 불법적인 내용을 식별합니다.
+
+### 3. 🌏 다국어 지원 (Multi-language Support)
+
+- 한국어, 영어(English), 네팔어, 캄보디아어, 인도네시아어, 베트남어, 미얀마어, 태국어 등 **8개국어**로 분석 결과를 제공합니다.
+- 외국인 근로자나 유학생도 쉽게 계약 내용을 이해할 수 있습니다.
+
+### 4. 👤 사용자 편의 기능
+
+- **회원가입/로그인**: 이메일 중복 확인 및 보안 로그인.
+- **이용약관 동의**: 필수 약관(개인정보, 법적 한계 등)에 대한 명확한 동의 절차.
+- **분석 이력 관리**: 과거 분석 내역을 저장하고 언제든 다시 열람할 수 있습니다. (안전한 회원 탈퇴 기능 포함)
+- **직관적인 UX**: 로딩 애니메이션 및 진행 상황 시각화로 사용자 경험을 강화했습니다.
+
+---
+
+## 🛠 Tech Stack (기술 스택)
+
+### Frontend
+
+- **Framework**: Next.js 14 (App Router)
+- **Styling**: Tailwind CSS
+- **Deployment**: Azure Static Web Apps
+
+### Backend
+
+- **Framework**: FastAPI (Python 3.9+)
+- **Database**: PostgreSQL (Production) / SQLite (Dev)
+- **AI/ML**: Azure OpenAI (GPT-4), Azure Document Intelligence (OCR), Azure AI Search (RAG), Azure Language (PII Masking)
+- **Deployment**: Azure Container Apps
+
+---
+
+## 🏗 System Architecture & Workflow (시스템 구조 및 분석 프로세스)
 
 ### 1. Data Storage Strategy (데이터 저장 전략)
 
@@ -38,6 +82,28 @@
 5.  **Result Generation (결과 도출)**:
     - 발견된 모든 위험 요소(Risk)를 종합하여 안전도 점수를 계산합니다.
     - 사용자가 이해하기 쉬운 요약 리포트를 생성하고 **PostgreSQL**에 최종 저장합니다.
+
+---
+
+## 📂 Project Structure
+
+```bash
+2nd_project2/
+├── backend/            # FastAPI Server
+│   ├── app/            # Application Logic
+│   │   ├── api/        # Endpoints
+│   │   ├── services/   # Business Logic (Analysis, OCR, PII)
+│   │   └── models/     # Database Schemas
+│   ├── data/           # RAG Source PDFs (Laws, Cases)
+│   ├── scripts/        # Data Ingestion Scripts (RAG Setup)
+│   ├── Dockerfile      # Deployment Config
+│   └── requirements.txt
+├── frontend/           # Next.js Client
+│   ├── app/            # Pages & Routing
+│   ├── components/     # UI Components
+│   └── public/         # Static Assets
+└── docker-compose.yml  # Local Development Config
+```
 
 ---
 
@@ -127,7 +193,7 @@ npm run dev
 ### 1. GitHub Push
 
 프로젝트 전체(`frontend`, `backend` 포함)를 GitHub 저장소에 Push 합니다.
-**주의**: `.env` 파일은 보안상 절대 올리지 마세요. (이미 `.gitignore`에 처리되어 있습니다)
+**주의**: `.env` 파일은 보안상 절대 올리지 않아야 합니다. (이미 `.gitignore`에 처리되어 있습니다)
 
 ### 2. Azure Container Apps (백엔드)
 
@@ -140,25 +206,3 @@ npm run dev
 - GitHub의 `frontend` 폴더를 기준으로 배포합니다.
 - Build Presets으로 **Next.js**를 선택합니다.
 - 환경 변수 `NEXT_PUBLIC_API_URL`에 위에서 배포한 백엔드 주소를 입력합니다.
-
----
-
-## 📂 Project Structure
-
-```bash
-2nd_project2/
-├── backend/            # FastAPI Server
-│   ├── app/            # Application Logic
-│   │   ├── api/        # Endpoints
-│   │   ├── services/   # Business Logic (Analysis, OCR, PII)
-│   │   └── models/     # Database Schemas
-│   ├── data/           # RAG Source PDFs (Laws, Cases)
-│   ├── scripts/        # Data Ingestion Scripts (RAG Setup)
-│   ├── Dockerfile      # Deployment Config
-│   └── requirements.txt
-├── frontend/           # Next.js Client
-│   ├── app/            # Pages & Routing
-│   ├── components/     # UI Components
-│   └── public/         # Static Assets
-└── docker-compose.yml  # Local Development Config
-```
