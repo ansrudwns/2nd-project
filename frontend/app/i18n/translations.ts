@@ -167,10 +167,10 @@ export const translations = {
     registry_label: "दर्ता प्रमाण पत्र",
     analyze_btn: "AI विश्लेषण सुरु गर्नुहोस्",
     analyzing: "AI ले कागजातहरू विश्लेषण गर्दैछ...",
-    analyzing: "AI ले कागजातहरू विश्लेषण गर्दैछ...",
+
     analyzing_time_msg: "यो लगभग २-३ मिनेट लाग्छ।",
     stop_analysis: "विश्लेषण रोक्नुहोस्",
-    stop_analysis: "विश्लेषण रोक्नुहोस्",
+
     result_title: "विश्लेषण परिणाम",
     risk_found: "जोखिम फेला पर्यो",
     safe: "सुरक्षित",
@@ -244,10 +244,10 @@ export const translations = {
     registry_label: "ប្លង់រឹង",
     analyze_btn: "ចាប់ផ្តើមវិភាគ AI",
     analyzing: "AI កំពុងវិភាគឯកសារ...",
-    analyzing: "AI កំពុងវិភាគឯកសារ...",
+
     analyzing_time_msg: "វាចំណាយពេលប្រហែល ២-៣ នាទី។",
     stop_analysis: "បញ្ឈប់ការវិភាគ",
-    stop_analysis: "បញ្ឈប់ការវិភាគ",
+
     result_title: "លទ្ធផលវិភាគ",
     risk_found: "រកឃើញហានិភ័យ",
     safe: "សុវត្ថិភាព",
@@ -321,10 +321,10 @@ export const translations = {
     registry_label: "Sertifikat",
     analyze_btn: "Mulai Analisis AI",
     analyzing: "AI sedang menganalisis dokumen...",
-    analyzing: "AI sedang menganalisis dokumen...",
+
     analyzing_time_msg: "Dibutuhkan sekitar 2-3 menit.",
     stop_analysis: "Hentikan Analisis",
-    stop_analysis: "Hentikan Analisis",
+
     result_title: "Hasil Analisis",
     risk_found: "Risiko Ditemukan",
     safe: "Aman",
@@ -399,10 +399,10 @@ export const translations = {
     registry_label: "Sổ đỏ",
     analyze_btn: "Bắt đầu phân tích AI",
     analyzing: "AI đang phân tích tài liệu...",
-    analyzing: "AI đang phân tích tài liệu...",
+
     analyzing_time_msg: "Sẽ mất khoảng 2-3 phút.",
     stop_analysis: "Dừng phân tích",
-    stop_analysis: "Dừng phân tích",
+
     result_title: "Kết quả phân tích",
     risk_found: "Phát hiện rủi ro",
     safe: "An toàn",
@@ -477,10 +477,10 @@ export const translations = {
     registry_label: "မှတ်ပုံတင်",
     analyze_btn: "AI စစ်ဆေးမှု စတင်မည်",
     analyzing: "AI မှ စစ်ဆေးနေပါသည်...",
-    analyzing: "AI မှ စစ်ဆေးနေပါသည်...",
+
     analyzing_time_msg: "၂-၃ မိနစ်ခန့် ကြာပါသည်။",
     stop_analysis: "ဆန်းစစ်ချက်ကို ရပ်မည်",
-    stop_analysis: "ဆန်းစစ်ချက်ကို ရပ်မည်",
+
     result_title: "စစ်ဆေးမှု ရလဒ်",
     risk_found: "အန္တရာယ် ရှိသည်",
     safe: "လုံခြုံ",
@@ -555,10 +555,10 @@ export const translations = {
     registry_label: "โฉนดที่ดิน",
     analyze_btn: "เริ่มการวิเคราะห์ AI",
     analyzing: "AI กำลังวิเคราะห์เอกสาร...",
-    analyzing: "AI กำลังวิเคราะห์เอกสาร...",
+
     analyzing_time_msg: "ใช้เวลาประมาณ 2-3 นาที",
     stop_analysis: "หยุดการวิเคราะห์",
-    stop_analysis: "หยุดการวิเคราะห์",
+
     result_title: "ผลการวิเคราะห์",
     risk_found: "พบความเสี่ยง",
     safe: "ปลอดภัย",
