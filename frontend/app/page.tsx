@@ -1132,11 +1132,16 @@ export default function Home() {
                       key={item.id}
                       onClick={() => {
                         console.log("History Item Clicked:", item);
-                        console.log("Service Type:", serviceType);
-                        console.log("Has Registry:", hasRegistry);
-                        console.log("Resolved isLease:", isLease);
 
-                        setSelectedService(isLease ? "rent" : "labor");
+                        // Strict Service Type Handling
+                        if (serviceType === "labor") {
+                          setSelectedService("labor");
+                        } else if (serviceType === "rent") {
+                          setSelectedService("rent");
+                        } else {
+                          // Fallback for legacy
+                          setSelectedService(isLease ? "rent" : "labor");
+                        }
 
                         const langToSet =
                           item.result_json?.summary?.language || "ko";
