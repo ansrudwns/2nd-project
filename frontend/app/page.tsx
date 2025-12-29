@@ -1481,33 +1481,45 @@ export default function Home() {
             {/* Right Panel: Viewer */}
             <div className="flex-1 bg-gray-100 relative flex flex-col">
               <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-10 flex bg-white rounded-full shadow-lg p-1 border border-gray-200">
-                <button
-                  onClick={() => setViewerTab("contract")}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all ${
-                    viewerTab === "contract"
-                      ? "bg-gray-900 text-white shadow-md scale-105"
-                      : "text-gray-500 hover:bg-gray-100"
-                  }`}
-                >
-                  <FileText className="w-4 h-4" />{" "}
-                  {t(
-                    selectedService === "labor"
-                      ? "contract_label_labor"
-                      : "contract_label"
-                  )}
-                </button>
-                {selectedService === "rent" && (
-                  <button
-                    onClick={() => setViewerTab("registry")}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all ${
-                      viewerTab === "registry"
-                        ? "bg-gray-900 text-white shadow-md scale-105"
-                        : "text-gray-500 hover:bg-gray-100"
-                    }`}
-                  >
-                    <Scan className="w-4 h-4" /> {t("registry_label")}
-                  </button>
-                )}
+                {(() => {
+                  // Calculate Service Type from Result Data (Single Source of Truth)
+                  const displayService = result
+                    ? result.summary?.service_type ||
+                      (result.documents?.registry_url ? "rent" : "labor")
+                    : selectedService;
+
+                  return (
+                    <>
+                      <button
+                        onClick={() => setViewerTab("contract")}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all ${
+                          viewerTab === "contract"
+                            ? "bg-gray-900 text-white shadow-md scale-105"
+                            : "text-gray-500 hover:bg-gray-100"
+                        }`}
+                      >
+                        <FileText className="w-4 h-4" />{" "}
+                        {t(
+                          displayService === "labor"
+                            ? "contract_label_labor"
+                            : "contract_label"
+                        )}
+                      </button>
+                      {displayService === "rent" && (
+                        <button
+                          onClick={() => setViewerTab("registry")}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all ${
+                            viewerTab === "registry"
+                              ? "bg-gray-900 text-white shadow-md scale-105"
+                              : "text-gray-500 hover:bg-gray-100"
+                          }`}
+                        >
+                          <Scan className="w-4 h-4" /> {t("registry_label")}
+                        </button>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
 
               <div className="flex-1 p-8 pt-24 overflow-auto flex justify-center">
