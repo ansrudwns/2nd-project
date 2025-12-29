@@ -36,10 +36,10 @@ export const translations = {
     select_service_title: "원하시는 분석 서비스를 선택하세요",
     service_rent_title: "임대차 계약 분석",
     service_rent_desc:
-      "등기부등본과 계약서를 비교하여 임대차 사기 위험을 진단합니다.",
+      "AI가 등기부등본과 계약서를 비교하고 관련 법률 데이터를 실시간으로 참조하여, 잠재적인 위험 요소를 사전에 인지할 수 있도록 지원합니다.",
     service_labor_title: "근로 계약 분석",
     service_labor_desc:
-      "부당한 근로 조건이나 독소 조항이 없는지 AI가 점검합니다.",
+      "AI가 관련 법률 데이터를 토대로 분석하여, 근로자에게 불리한 독소 조항 등 잠재적인 위험 요소를 사전에 인지할 수 있도록 지원합니다.",
     coming_soon: "서비스 준비 중입니다.",
     login_desc: "AI가 계약서를 분석하여\n숨겨진 위험요소를 찾아드립니다.",
     demo_account: "데모 계정으로 로그인됩니다.",
