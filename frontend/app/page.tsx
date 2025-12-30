@@ -424,13 +424,13 @@ export default function Home() {
           </span>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4">
           {/* Language Switcher */}
           <select
             value={currentLang}
             onChange={(e) => setLanguage(e.target.value as LanguageCode)}
             disabled={view === "analyzing" || view === "result"}
-            className={`px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-base font-bold text-gray-700 outline-none focus:ring-2 focus:ring-indigo-500 transition-opacity ${
+            className={`px-2 py-2 md:px-4 md:py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm md:text-base font-bold text-gray-700 outline-none focus:ring-2 focus:ring-indigo-500 transition-opacity ${
               view === "analyzing" || view === "result"
                 ? "opacity-50 cursor-not-allowed"
                 : ""
@@ -486,7 +486,7 @@ export default function Home() {
         {/* LOGIN VIEW */}
         {view === "login" && (
           <div className="flex-1 flex flex-col items-center justify-center p-4 bg-gradient-to-br from-indigo-50 via-white to-blue-50">
-            <div className="bg-white p-14 rounded-3xl shadow-2xl border border-indigo-50 max-w-lg w-full text-center">
+            <div className="bg-white p-6 md:p-14 rounded-3xl shadow-2xl border border-indigo-50 max-w-lg w-full text-center">
               <div className="flex justify-center mb-2">
                 <Image
                   src="/logo.png"
@@ -618,7 +618,7 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="flex gap-6 max-w-4xl w-full">
+            <div className="flex flex-col md:flex-row gap-4 md:gap-6 max-w-4xl w-full">
               {/* Contract Upload */}
               <div
                 className={`flex-1 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer hover:border-indigo-400 group h-80 ${
@@ -1232,9 +1232,9 @@ export default function Home() {
 
         {/* RESULT VIEW */}
         {view === "result" && result && (
-          <div className="flex-1 flex overflow-hidden">
+          <div className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
             {/* Left Panel: Report */}
-            <div className="w-5/12 min-w-[400px] bg-white border-r border-gray-200 flex flex-col overflow-y-auto">
+            <div className="w-full md:w-5/12 md:min-w-[400px] bg-white border-b md:border-b-0 md:border-r border-gray-200 flex flex-col">
               <div className="p-8">
                 {(() => {
                   // Helper for report-specific translation
@@ -1496,7 +1496,7 @@ export default function Home() {
             </div>
 
             {/* Right Panel: Viewer */}
-            <div className="flex-1 bg-gray-100 relative flex flex-col">
+            <div className="w-full md:flex-1 h-[500px] md:h-auto bg-gray-100 relative flex flex-col">
               <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-10 flex bg-white rounded-full shadow-lg p-1 border border-gray-200">
                 {(() => {
                   // Calculate Service Type from Result Data (Single Source of Truth)
