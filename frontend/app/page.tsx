@@ -387,8 +387,11 @@ export default function Home() {
     }
   };
 
+  // --- RENDER ---
+  if (!isMounted) return null;
+
   return (
-    <div className="min-h-screen bg-blue-50 flex flex-col font-sans text-gray-900">
+    <div className="min-h-screen font-[family-name:var(--font-geist-sans)] flex flex-col bg-white">
       {/* Full Screen Loading Overlay */}
       {(isHistoryLoading || isCancelling || isDeletingAccount) && (
         <div className="fixed inset-0 bg-black/50 z-[9999] flex flex-col items-center justify-center backdrop-blur-sm">
@@ -618,10 +621,10 @@ export default function Home() {
             <div className="flex gap-6 max-w-4xl w-full">
               {/* Contract Upload */}
               <div
-                className={`flex-1 border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer hover:border-indigo-400 group h-80 ${
+                className={`flex-1 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer hover:border-indigo-400 group h-80 ${
                   contractFile
-                    ? "border-indigo-500 bg-indigo-50"
-                    : "border-gray-300 bg-white"
+                    ? "border-4 border-indigo-600 bg-indigo-100 shadow-xl scale-105"
+                    : "border-2 border-gray-300 bg-white"
                 }`}
               >
                 <input
@@ -638,7 +641,7 @@ export default function Home() {
                   <div
                     className={`p-4 rounded-full mb-4 transition-colors ${
                       contractFile
-                        ? "bg-white text-indigo-600 shadow-md"
+                        ? "bg-white text-indigo-600 shadow-md ring-4 ring-indigo-200"
                         : "bg-gray-100 text-gray-400 group-hover:bg-indigo-50 group-hover:text-indigo-500"
                     }`}
                   >
@@ -660,7 +663,13 @@ export default function Home() {
                       </span>
                     )}
                   </h3>
-                  <div className="text-sm text-gray-400 mb-4 flex flex-col items-center">
+                  <div
+                    className={`text-sm mb-4 flex flex-col items-center ${
+                      contractFile
+                        ? "text-indigo-900 font-medium"
+                        : "text-gray-400"
+                    }`}
+                  >
                     {contractFile ? (
                       contractFile.name
                     ) : (
@@ -675,7 +684,8 @@ export default function Home() {
                     )}
                   </div>
                   {contractFile && (
-                    <div className="text-xs bg-indigo-200 text-indigo-800 px-3 py-1 rounded-full font-bold">
+                    <div className="text-sm bg-indigo-600 text-white px-4 py-1.5 rounded-full font-bold shadow-lg flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4" />
                       {t("upload_done")}
                     </div>
                   )}
@@ -685,10 +695,10 @@ export default function Home() {
               {/* Registry Upload (Conditionally Rendered) */}
               {selectedService === "rent" && (
                 <div
-                  className={`flex-1 border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer hover:border-blue-400 group h-80 ${
+                  className={`flex-1 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer hover:border-emerald-400 group h-80 ${
                     registryFile
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-300 bg-white"
+                      ? "border-4 border-emerald-600 bg-emerald-100 shadow-xl scale-105"
+                      : "border-2 border-gray-300 bg-white"
                   }`}
                 >
                   <input
@@ -707,8 +717,8 @@ export default function Home() {
                     <div
                       className={`p-4 rounded-full mb-4 transition-colors ${
                         registryFile
-                          ? "bg-white text-blue-600 shadow-md"
-                          : "bg-gray-100 text-gray-400 group-hover:bg-blue-50 group-hover:text-blue-500"
+                          ? "bg-white text-emerald-600 shadow-md ring-4 ring-emerald-200"
+                          : "bg-gray-100 text-gray-400 group-hover:bg-emerald-50 group-hover:text-emerald-500"
                       }`}
                     >
                       <Scan className="w-8 h-8" />
@@ -721,7 +731,13 @@ export default function Home() {
                         </span>
                       )}
                     </h3>
-                    <div className="text-sm text-gray-400 mb-4 flex flex-col items-center">
+                    <div
+                      className={`text-sm mb-4 flex flex-col items-center ${
+                        registryFile
+                          ? "text-emerald-900 font-medium"
+                          : "text-gray-400"
+                      }`}
+                    >
                       {registryFile ? (
                         registryFile.name
                       ) : (
@@ -736,7 +752,8 @@ export default function Home() {
                       )}
                     </div>
                     {registryFile && (
-                      <div className="text-xs bg-blue-200 text-blue-800 px-3 py-1 rounded-full font-bold">
+                      <div className="text-sm bg-emerald-600 text-white px-4 py-1.5 rounded-full font-bold shadow-lg flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4" />
                         {t("upload_done")}
                       </div>
                     )}

@@ -119,26 +119,38 @@ class VisualizerService:
                     # If we set page_width/height as canvas size.
                     # We render assuming 0,0 is bottom-left of CROPBOX area.
                     
-                    # Draw PII Masks (Black)
+                    # NOTE: Rotation Handling
+                    # If page is rotated, CropBox might be swapped relative to content?
+                    prominent_rotation = page.get('/Rotate', 0)
+                    print(f"DEBUG: Page {i+1} Rotation: {prominent_rotation}, CropBox: {box}")
+
+                    # PRODUCTION MODE: Draw Solid Black
                     c.setFillColorRGB(0, 0, 0)
+                    c.setStrokeColorRGB(0, 0, 0)
+                    c.setLineWidth(1)
                     for pii in page_pii:
                         if "box_norm" in pii:
                             bn = pii["box_norm"]
                             # Normalized 0..1 relative to CropBox dimensions
                             
-                            w = (bn[2] - bn[0]) * page_width
-                            h = (bn[3] - bn[1]) * page_height
+                            rect_w = (bn[2] - bn[0]) * page_width
+                            rect_h = (bn[3] - bn[1]) * page_height
                             
-                            x_in_page = bn[0] * page_width
-                            y_top_in_page = bn[1] * page_height 
-                            y_bot_in_page = bn[3] * page_height
+                            # Calculate relative position from Top-Left of visible area
+                            x_rel = bn[0] * page_width
+                            y_bot_rel = bn[3] * page_height
                             
                             # Convert to PDF Coords (Origin Bottom-Left)
-                            # OCR Y=0 is Top. 
-                            # PDF Y_Bot = Height - OCR_Y_Bot
-                            y_rl = page_height - y_bot_in_page
+                            # Relative Y from Bottom of Visible Area
+                            y_rel_from_bottom = page_height - y_bot_rel
+                            
+                            # Add Absolute Page Offsets (Critical for PDFs with non-zero CropBox origin)
+                            # If CropBox starts at (100, 100), we must add 100 to draw inside it.
+                            final_x = page_base_x + x_rel
+                            final_y = page_base_y + y_rel_from_bottom
 
-                            c.rect(x_in_page, y_rl, w, h, fill=1, stroke=0)
+                            print(f"DEBUG VISUALIZER: Drawing PII box on page {i}: '{pii.get('text', '')[:30]}...' at ({final_x:.1f}, {final_y:.1f}), size ({rect_w:.1f}, {rect_h:.1f})")
+                            c.rect(final_x, final_y, rect_w, rect_h, fill=1, stroke=0)
                             
                         elif "box" in pii:
                             # Legacy fallback (Absolute coords from OCR assumed to match PDF points?)

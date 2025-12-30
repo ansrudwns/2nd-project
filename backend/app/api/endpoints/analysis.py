@@ -1,6 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, Form, Depends, Request
 import logging
 import os
+import re
 import uuid
 from typing import List
 from app.core.pipeline import PipelineRunner, Stage
@@ -184,17 +185,16 @@ async def analyze_documents(
         
     step_rules.stage_id = Stage.RULE_ENGINE
 
-    # 6. PII Masking Step (Real Regex on OCR Lines)
-    # 6. PII Masking Step (Advanced)
-    # 6. PII Masking Step (Azure Native)
+    # 6. PII Masking Step
     async def step_pii(ctx):
         from app.services.pii import PiiService
         
         pii_service = PiiService()
-        # Clean target address for exclusion (remove spaces)
-        target_addr_clean = ctx['contract_obj'].address.replace(" ", "") if ctx.get('contract_obj') and ctx['contract_obj'].address else ""
-
-        def process_doc(ocr_result, known_values=None):
+        
+        # Prepare Context
+        contract_addr = ctx.get('contract_obj').address if ctx.get('contract_obj') else ""
+        
+        def process_doc(ocr_result, doc_type, target_addr_ctx=""):
             if not ocr_result: return []
             
             # 1. Linearize Text & Build Map
@@ -215,96 +215,94 @@ async def analyze_documents(
             if not full_text.strip():
                 return []
 
-            # 2. Azure PII Detection
-            entities = pii_service.detect_pii(full_text)
+            # 2. PII Detection (Type-Specific)
+            context = {
+                "target_address": target_addr_ctx
+            }
             
-            # --- HYBRID EXTENSION: Add Regex-found values ---
-            if known_values:
-                # known_values is a list of strings (e.g. ["Hong Gil Dong"])
-                # We artificially create "PII Entities" for these.
-                # Problem: full_text has spaces inserted between words. "Hong Gil Dong" might be "Hong Gil Dong" or "HongGilDong"
-                # Solution: Create a flexible regex pattern from the known string.
-                import re
-                for val in known_values:
-                    if not val or len(val) < 2: continue
-                    
-                    # Create pattern: "홍길동" -> "홍\s*길\s*동"
-                    # Escape chars first, then join with \s*
-                    val_chars = list(val)
-                    escaped_chars = [re.escape(c) for c in val_chars if c.strip()]
-                    if not escaped_chars: continue
-                    
-                    # Allow variable spaces between meaningful characters
-                    pattern_str = r"\s*".join(escaped_chars)
-                    
-                    # Search
-                    try:
-                        for m in re.finditer(pattern_str, full_text):
-                            entities.append({
-                                "text": m.group(),
-                                "category": "HybridFallback", 
-                                "subcategory": None,
-                                "offset": m.start(),
-                                "length": len(m.group()),
-                                "confidence_score": 1.0
-                            })
-                    except re.error:
-                        print(f"Regex Error for pattern: {pattern_str}")
-                        continue
-            # ------------------------------------------------
-
+            # Inject LLM Extracted Names into Context
+            if ctx.get('contract_obj'):
+                context['lessor_name'] = ctx['contract_obj'].lessor_name
+                context['lessee_name'] = ctx['contract_obj'].lessee_name
+            
+            if ctx.get('registry_obj'):
+                context['owner_name'] = ctx['registry_obj'].owner_name
+            
+            entities = pii_service.detect_pii(full_text, doc_type=doc_type, context=context)
+            
+            # 3. Map to Boxes
             boxes = pii_service.map_pii_to_boxes(entities, pages, text_map)
+            
+            return boxes
 
-            # 4. Exclusion & Refinement
-            final_boxes = []
-            for b in boxes:
-                # Exclusion: Target Address
-                t_clean = b['text'].replace(" ", "")
-                if target_addr_clean and len(t_clean) > 5 and (t_clean in target_addr_clean or target_addr_clean in t_clean):
-                    continue 
+        # Determine Contract Type (Rent vs Labor)
+        # AGGRESSIVE classification with multiple keyword checks
+        def classify_doc_type(ocr_res):
+            if not ocr_res: 
+                print("DEBUG: No OCR result - defaulting to RENT")
+                return "RENT"
+            
+            # Try multiple sources for text content
+            full_t = ""
+            
+            # Source 1: Pre-joined content
+            if ocr_res.get('content'):
+                full_t = ocr_res['content']
+                print(f"DEBUG: Got content from ocr_res['content'], length: {len(full_t)}")
+            
+            # Source 2: Manual reconstruction from pages
+            if not full_t and 'pages' in ocr_res:
+                for p in ocr_res['pages'][:3]:  # Check first 3 pages
+                    # Try lines first
+                    if 'lines' in p:
+                        for l in p.get('lines', []):
+                            full_t += l.get('text', '') + " "
+                    # Fallback to words
+                    elif 'words' in p:
+                        for w in p.get('words', []):
+                            full_t += w.get('content', '') + " "
+                if full_t:
+                    print(f"DEBUG: Reconstructed text from pages, length: {len(full_t)}")
+            
+            if not full_t:
+                print("DEBUG: No text content found - defaulting to RENT")
+                return "RENT"
+            
+            # Show first 200 chars for debugging
+            print(f"DEBUG: Text sample: {full_t[:200]}")
+            
+            # AGGRESSIVE keyword search - check for ANY Labor-related term
+            labor_keywords = [
+                r'근\s*로',  # 근로 (Labor)
+                r'Labor',
+                r'Employee',
+                r'Employer',
+                r'Standard\s*Labor',
+                r'고\s*용',  # 고용 (Employment)
+                r'Standard\s*Contract',
+                r'사\s*용\s*자.*근\s*로\s*자',  # Employer...Employee pattern
+            ]
+            
+            for keyword in labor_keywords:
+                if re.search(keyword, full_t, re.IGNORECASE):
+                    print(f"DEBUG: LABOR keyword matched: {keyword}")
+                    return "LABOR"
+            
+            print("DEBUG: No labor keywords found - defaulting to RENT")
+            return "RENT"
 
-                # Keyword Filter
-                if b['text'] in ["임대인", "임차인", "소유자", "대리인", "주소", "성명", "주민등록번호"]:
-                    continue
-
-                # Partial Masking Logic (Person Name)
-                # Apply to 'Person' category AND our 'HybridFallback' if it looks like a name (len < 5?)
-                is_person = b.get('category') == 'Person' or (b.get('category') == 'HybridFallback' and len(b['text']) < 6)
-                
-                if is_person and len(b['text']) >= 2:
-                     x1, y1, x2, y2 = b['box_norm']
-                     width = x2 - x1
-                     char_w = width / len(b['text'])
-                     mask_x1 = x1 + (char_w * 0.9) # Leave 1st char estimate
-                     
-                     if mask_x1 < x2:
-                        b['box_norm'] = [mask_x1, y1, x2, y2]
-                
-                final_boxes.append(b)
-                
-            return final_boxes
-
-        # Gather Known Values from Regex Extraction
-        # These are the "Truths" found by the Report
-        c_obj = ctx.get('contract_obj')
-        known_contract_pii = []
-        if c_obj:
-            if c_obj.lessor_name: known_contract_pii.append(c_obj.lessor_name)
-            if c_obj.lessee_name: known_contract_pii.append(c_obj.lessee_name)
-            # Add other known regex fields if needed (RRN not in obj usually)
+        primary_type = classify_doc_type(ctx.get('contract_ocr'))
+        print(f"DEBUG: FINAL Document Type: {primary_type}")
         
-        ctx['contract_pii'] = process_doc(ctx.get('contract_ocr'), known_values=known_contract_pii)
+        # Process Contract
+        ctx['contract_pii'] = process_doc(ctx.get('contract_ocr'), primary_type, contract_addr)
         
-        # Registry Knowns
-        r_obj = ctx.get('registry_obj')
-        known_registry_pii = []
-        if r_obj and r_obj.owner_name:
-            known_registry_pii.append(r_obj.owner_name)
+        # Process Registry (Always REGISTRY type)
+        ctx['registry_pii'] = process_doc(ctx.get('registry_ocr'), "REGISTRY", contract_addr)
 
-        ctx['registry_pii'] = process_doc(ctx.get('registry_ocr'), known_values=known_registry_pii)
+    step_pii.stage_id = Stage.PII_MASKING
 
-
-            # 6-1. Toxic Clause Detection (LLM + RAG)
+    # 6-1. Toxic Clause Detection (LLM + RAG)
     async def step_toxic_clauses(ctx):
         from app.services.rag import RAGService
         from app.services.llm import LLMService
@@ -775,13 +773,36 @@ async def analyze_documents(
                     is_match = False
 
                     # 1. Numeric Match + Context (Strict)
+                    # FIX: Prevent partial matches on addresses (e.g. matching "Seoul" + "19" when target is "Seoul" + "724")
+                    # Require substantial numeric overlap if target has multiple numbers.
                     if not target_nums.isdisjoint(line_nums):
+                         overlap_nums = target_nums.intersection(line_nums)
+                         # If target has many numbers (e.g. 724-18, 201), we expect more than just 1 unless it's unique
+                         
                          overlap_specific = target_texts_specific.intersection(line_texts_specific)
-                         if len(overlap_specific) >= 1:
-                             is_match = True
+                         
+                         # Check strictness
+                         if len(overlap_nums) >= 2:
+                             # Strong numeric match (e.g. 724 and 18)
+                             if len(overlap_specific) >= 1:
+                                 is_match = True
+                                 
+                         elif len(overlap_nums) == 1:
+                             # Only 1 matching number.
+                             # It must be a specific/rare number (longer is better)
+                             matched_num = list(overlap_nums)[0]
+                             if len(matched_num) >= 3: 
+                                 # 3+ digits (e.g. 724, 201) -> Valid if context matches
+                                 if len(overlap_specific) >= 2: # Need 2 text tokens (e.g. Seoul, Dong)
+                                     is_match = True
+                             else:
+                                 # Short number (e.g. 18, 1, 2) -> Very risky. Require HIGH context.
+                                 if len(overlap_specific) >= 3:
+                                     is_match = True
                         
                     # 2. Strong Text Match (Context Only)
-                    elif len(target_texts_specific.intersection(line_texts_specific)) >= 2:
+                    elif len(target_texts_specific.intersection(line_texts_specific)) >= 3:
+                         # Relaxed from 2 to 3 to avoid "Seoul Seodaemun-gu" matching everything
                          is_match = True
 
                     # 3. Fallback: Exact Short Match (Names, Deposit Amounts)
@@ -1075,8 +1096,8 @@ async def analyze_labor_documents(
             
             if not full_text.strip(): return []
 
-            # 2. Azure PII
-            entities = pii_service.detect_pii(full_text)
+            # 2. Azure PII (WITH CORRECT DOC_TYPE)
+            entities = pii_service.detect_pii(full_text, doc_type="LABOR")
             
             # 3. Known Values (Rules-based)
             if known_values:
@@ -1102,12 +1123,16 @@ async def analyze_labor_documents(
 
             # 4. Refinement
             final_boxes = []
+            print(f"DEBUG ANALYSIS: Filtering {len(boxes)} boxes by category...")
             for b in boxes:
-                # Mask RRN, Phone, and specific Names
-                if b.get('category') in ['Person', 'resident_registration_number', 'PhoneNumber', 'Email', 'HybridFallback']:
+                category = b.get('category')
+                # Mask RRN, Phone, Names, DateTime (birthdates), and Addresses
+                # IMPORTANT: For Labor contracts, we also need DateTime (birthdate) and Address (home/location addresses)
+                # NOTE: Organization is excluded - company names are public information
+                if category in ['Person', 'resident_registration_number', 'PhoneNumber', 'Email', 'HybridFallback', 'DateTime', 'Address']:
                     
                     # Partial Masking for Names
-                    is_person = b.get('category') in ['Person', 'HybridFallback']
+                    is_person = category in ['Person', 'HybridFallback']
                     if is_person and len(b['text']) >= 2:
                          x1, y1, x2, y2 = b['box_norm']
                          width = x2 - x1
@@ -1118,6 +1143,10 @@ async def analyze_labor_documents(
                             b['box_norm'] = [mask_x1, y1, x2, y2]
                     
                     final_boxes.append(b)
+                else:
+                    print(f"DEBUG ANALYSIS: FILTERING OUT category={category}: '{b['text'][:40]}...'")
+            
+            print(f"DEBUG ANALYSIS: Final boxes count: {len(final_boxes)} (filtered from {len(boxes)})")
             return final_boxes
 
         # Gather Known PII from Object
