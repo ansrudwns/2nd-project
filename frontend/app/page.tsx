@@ -419,7 +419,7 @@ export default function Home() {
             height={48}
             className="w-12 h-12 object-contain"
           />
-          <span className="bg-gradient-to-r from-blue-500 via-indigo-600 to-violet-900 bg-clip-text text-transparent font-bold text-2xl tracking-tight font-[family-name:var(--font-outfit)] mt-1">
+          <span className="hidden sm:block bg-gradient-to-r from-blue-500 via-indigo-600 to-violet-900 bg-clip-text text-transparent font-bold text-2xl tracking-tight font-[family-name:var(--font-outfit)] mt-1">
             CheckMate
           </span>
         </div>
@@ -453,7 +453,7 @@ export default function Home() {
                 onClick={handleProfileClick}
               >
                 <UserIcon className="w-5 h-5 text-gray-500" />
-                <span className="font-medium text-gray-700">
+                <span className="hidden md:inline font-medium text-gray-700">
                   {user.name} 님
                 </span>
               </div>
@@ -463,7 +463,7 @@ export default function Home() {
                 className="flex items-center gap-2 text-sm font-medium text-gray-400 hover:text-red-500 transition-colors"
               >
                 <LogOut className="w-4 h-4" />
-                {t("logout")}
+                <span className="hidden md:inline">{t("logout")}</span>
               </button>
             </>
           ) : (
@@ -472,7 +472,7 @@ export default function Home() {
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 via-indigo-600 to-violet-900 hover:opacity-90 text-white rounded-lg transition shadow-md shadow-indigo-200"
             >
               <UserPlus className="w-4 h-4" />
-              {t("signup_btn")}
+              <span className="hidden sm:inline">{t("signup_btn")}</span>
             </button>
           )}
         </div>
