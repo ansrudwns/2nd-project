@@ -1,12 +1,8 @@
-name: Trigger auto deployment for containerapps-team5
+name: Historical Azure Container Apps Deployment
 
+# Preserved as evidence of the original deployment pipeline.
+# The Azure resource and deployment credentials are no longer active.
 on:
-  push:
-    branches: [main]
-    paths:
-      - "**"
-      - ".github/workflows/containerapps-team5-AutoDeployTrigger-a1b613ab-1f6e-4f46-b78d-373504e952af.yml"
-
   workflow_dispatch:
 
 jobs:

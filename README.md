@@ -198,6 +198,8 @@ npm run dev
 
 ## Deployment (배포 가이드)
 
+> 프로젝트 당시 Azure Static Web Apps와 Azure Container Apps에 배포했습니다. 현재 클라우드 리소스와 배포 키는 종료했으며, 당시 배포 구성을 증빙하기 위해 두 워크플로를 `workflow_dispatch` 수동 실행 방식으로 보존하고 있습니다. PR과 `main` 브랜치에서는 Azure 키가 필요 없는 테스트·빌드 CI만 자동 실행됩니다.
+
 ### 1. GitHub Push
 
 프로젝트 전체(`frontend`, `backend` 포함)를 GitHub 저장소에 Push 합니다.
