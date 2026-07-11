@@ -138,12 +138,22 @@ class RuleEngine:
         found_risks = []
         
         # Mocking access to rights if not in schema yet, will default to []
-        rights = getattr(registry, "rights", []) 
+        rights = getattr(registry, "rights", None)
+
+        if not rights:
+            return RuleResult(
+                rule_id="RIGHTS",
+                status="UNKNOWN",
+                severity="MED",
+                title="선순위 권리 판단 불가",
+                evidence=RuleEvidence(detail="을구 권리 정보를 추출하지 못했거나 권리 없음 상태를 확인할 근거가 부족합니다.")
+            )
         
         for r in rights:
+            right_type = getattr(r, "type", str(r))
             for danger in dangerous_rights:
-                if danger in r:
-                    found_risks.append(r)
+                if danger in right_type:
+                    found_risks.append(right_type)
         
         if found_risks:
             return RuleResult(
@@ -162,14 +172,20 @@ class RuleEngine:
         try:
              # Mock date check. Real world would parse date.
              # If no date, WARNING.
-             if not registry.issue_date:
-                 return RuleResult(rule_id="DATE", status="FAIL", severity="MED", title="등기부 발행일자", evidence=RuleEvidence(detail="발행일자를 확인할 수 없습니다."))
-             
-             # If too old (e.g. > 7 days) - This requires current date context.
-             # Let's just pass for MVP unless strictly defined.
-             return RuleResult(rule_id="DATE", status="PASS", severity="LOW", title="등기부 발행일자", evidence=RuleEvidence(detail="유효한 발행일자입니다."))
-        except:
-             return RuleResult(rule_id="DATE", status="PASS", severity="LOW", title="등기부 발행일자", evidence=RuleEvidence(detail="날짜 포맷 검증 생략"))
+             raw_issue_date = str(registry.issue_date or "").strip()
+             if not raw_issue_date:
+                 return RuleResult(rule_id="DATE", status="UNKNOWN", severity="MED", title="등기부 발행일자", evidence=RuleEvidence(detail="발행일자를 확인할 수 없습니다."))
+
+             normalized = raw_issue_date.replace("년", "-").replace("월", "-").replace("일", "").replace(".", "-").replace("/", "-")
+             issue_date = datetime.strptime(normalized[:10], "%Y-%m-%d").date()
+             age_days = (datetime.now().date() - issue_date).days
+             if age_days < 0:
+                 return RuleResult(rule_id="DATE", status="UNKNOWN", severity="MED", title="등기부 발행일자", evidence=RuleEvidence(detail="발행일자가 현재보다 미래로 인식되어 확인이 필요합니다."))
+             if age_days > 7:
+                 return RuleResult(rule_id="DATE", status="FAIL", severity="MED", title="등기부 발행일자", evidence=RuleEvidence(detail=f"발행 후 {age_days}일이 지나 최신 등기사항 재확인이 필요합니다."))
+             return RuleResult(rule_id="DATE", status="PASS", severity="LOW", title="등기부 발행일자", evidence=RuleEvidence(detail=f"발행 후 {age_days}일 이내의 등기부입니다."))
+        except (TypeError, ValueError):
+             return RuleResult(rule_id="DATE", status="UNKNOWN", severity="MED", title="등기부 발행일자", evidence=RuleEvidence(detail="발행일자 형식을 해석할 수 없습니다."))
 
     @staticmethod
     def _check_building_usage(contract: Contract, registry: Registry) -> RuleResult:
@@ -177,6 +193,9 @@ class RuleEngine:
         found = []
         # Check usage in registry
         usage = getattr(registry, "building_usage", "") # Assuming field exists
+
+        if not usage:
+            return RuleResult(rule_id="USAGE", status="UNKNOWN", severity="MED", title="건축물 용도 판단 불가", evidence=RuleEvidence(detail="건축물 용도 정보를 추출하지 못했습니다."))
         
         for bad in illegal:
             if bad in usage:

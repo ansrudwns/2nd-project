@@ -1,8 +1,8 @@
 # CheckMate: AI Real Estate & Labor Contract Analysis System
 
-**CheckMate**는 부동산 임대차 계약서와 등기부등본, 그리고 근로 계약서를 AI로 분석하여 법적 위험 요소를 진단하고, 8개 국어로 번역된 리포트를 제공하는 지능형 계약 분석 플랫폼입니다.
+**CheckMate**는 부동산 임대차 계약서와 등기부등본, 그리고 근로 계약서를 AI와 규칙 기반 로직으로 분석하여 검토가 필요한 항목을 표시하고, 8개 국어 리포트를 생성하는 계약 분석 프로토타입입니다.
 
-![Project Status](https://img.shields.io/badge/Status-Active-success)
+![Project Status](https://img.shields.io/badge/Status-Prototype-orange)
 ![Python](https://img.shields.io/badge/Backend-FastAPI-blue)
 ![React](https://img.shields.io/badge/Frontend-Next.js-black)
 ![Platform](https://img.shields.io/badge/Cloud-Azure-0078D4)
@@ -19,7 +19,7 @@
 
 ### 2. 근로 계약 분석 (Labor Contract Analysis)
 
-- **근로기준법 준수 여부**: 최저임금, 근로시간, 유급휴일 등 법적 필수 항목을 체크합니다.
+- **근로계약 검토 보조**: 추출된 급여, 근로시간, 근로개시일을 규칙으로 점검하고 정보가 부족하면 `UNKNOWN`으로 표시합니다.
 - **불공정 조항 탐지**: 위약금 예정, 강제 저축 등 불법적인 내용을 식별합니다.
 
 ### 3. 다국어 지원 (Multi-language Support)
@@ -66,7 +66,7 @@
 
 ### 2. Analysis Pipeline (분석 프로세스)
 
-사용자가 계약서를 업로드하면 다음과 같은 순서로 정밀 분석이 진행됩니다.
+사용자가 계약서를 업로드하면 다음과 같은 순서로 분석이 진행됩니다.
 
 1.  **Ingestion (수집)**:
     - 프론트엔드에서 업로드된 파일은 즉시 **Azure Blob Storage**에 안전하게 암호화되어 저장됩니다.
@@ -78,10 +78,18 @@
 4.  **AI & Rule-Based Analysis (복합 분석)**:
     - **Rule Engine**: 법적으로 명확한 위반 사항(최저임금 미달, 근로시간 초과 등)을 Python 알고리즘으로 1차 필터링합니다.
     - **Azure OpenAI (GPT-4)**: 모호한 특약사항이나 복잡한 법률 조항을 해석하고, "독소 조항"이나 "불공정 계약" 위험을 탐지합니다.
-    - **RAG (검색 증강)**: 분석 근거가 필요한 경우 **Azure AI Search**에 구축된 법률/판례 DB를 참조하여 정확도를 높입니다.
+    - **RAG (검색 증강)**: 설정된 **Azure AI Search** 법률/판례 인덱스에서 관련 문서를 검색해 설명 컨텍스트로 사용합니다.
 5.  **Result Generation (결과 도출)**:
-    - 발견된 모든 위험 요소(Risk)를 종합하여 안전도 점수를 계산합니다.
+    - 발견된 위험 항목 수와 가장 높은 심각도를 요약합니다.
     - 사용자가 이해하기 쉬운 요약 리포트를 생성하고 **PostgreSQL**에 최종 저장합니다.
+
+### 구현 상태와 한계
+
+- 이 저장소는 법률 자문이나 정확도 보장을 제공하는 운영 서비스가 아닌 프로토타입입니다.
+- 추출하지 못했거나 해석할 수 없는 값은 안전하다고 간주하지 않고 `UNKNOWN`으로 반환합니다.
+- RAG 인덱스나 Azure 연결이 없으면 가짜 근거를 생성하지 않고 검색 결과를 비워 둡니다.
+- 최저임금 규칙의 2025년 월 환산액은 당시 프로토타입 참고값이므로 현재 법령 판단에 그대로 사용하면 안 됩니다.
+- 실제 사용 전에는 최신 법령 반영, 전문가 검증 데이터셋, 회귀 테스트 및 보안 검토가 추가로 필요합니다.
 
 ---
 

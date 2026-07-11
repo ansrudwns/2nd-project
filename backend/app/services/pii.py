@@ -5,15 +5,15 @@ from typing import List, Dict, Any, Tuple, Set
 from app.core.config import settings
 from app.core.exceptions import AnalysisException, Stage
 
+logger = logging.getLogger(__name__)
+
 # Azure SDK
 try:
     from azure.ai.textanalytics import TextAnalyticsClient
     from azure.core.credentials import AzureKeyCredential
 except ImportError as e:
-    print(f"CRITICAL: Failed to import Azure SDK: {e}")
+    logger.warning("Azure Text Analytics SDK is unavailable: %s", type(e).__name__)
     TextAnalyticsClient = None
-
-logger = logging.getLogger(__name__)
 
 class PiiService:
     def __init__(self):
@@ -39,14 +39,7 @@ class PiiService:
         if context is None: context = {}
         target_address = context.get('target_address', "")
         
-        # EXPLICIT DEBUG
-        print(f"\n[PII SERVICE] detect_pii called.")
-        print(f" > DocType: {doc_type}")
-        print(f" > Context Keys: {list(context.keys())}")
-        if 'lessor_name' in context: print(f" > Context Lessor: {context['lessor_name']}")
-        if 'owner_name' in context: print(f" > Context Owner: {context['owner_name']}")
-        
-        logger.info(f"PII Detection Started. Type: {doc_type}, TargetAddr: {target_address}")
+        logger.info("PII detection started. type=%s context_keys=%s", doc_type, sorted(context.keys()))
         
         if doc_type == "RENT":
             return self._detect_rent(text, target_address, context)
@@ -64,9 +57,6 @@ class PiiService:
     def _detect_rent(self, text: str, target_address: str, context: Dict = None) -> List[Dict[str, Any]]:
         results = []
         
-        # DEBUG LOGGING
-        print(f"DEBUG: Rent Detection Start. TargetAddr: {target_address}")
-        
         # A. Dynamic Name Masking
         # 1. Regex Extraction
         detected_names = self._extract_names_rent(text)
@@ -83,7 +73,7 @@ class PiiService:
                     clean_n = n.strip().split('(')[0]
                     if len(clean_n) >= 2: detected_names.add(clean_n)
                     
-        print(f"DEBUG: Extracted Rent Names (Regex+LLM): {detected_names}")
+        logger.debug("Rent name candidates extracted. count=%d", len(detected_names))
         results.extend(self._find_all_names(text, detected_names))
         
         # B. Address Logic (Strict Exclusion)
@@ -125,7 +115,7 @@ class PiiService:
         results = []
         
         # DEBUG LOGGING
-        print(f"DEBUG: Registry Detection Start. TargetAddr: {target_address}")
+        logger.debug("Registry PII detection started")
         
         # A. Owner Name Masking (Dynamic)
         detected_names = self._extract_names_registry(text)
@@ -138,7 +128,7 @@ class PiiService:
                     clean_n = n.strip().split('(')[0]
                     if len(clean_n) >= 2: detected_names.add(clean_n)
         
-        print(f"DEBUG: Extracted Registry Owner Names (Regex+LLM): {detected_names}")
+        logger.debug("Registry name candidates extracted. count=%d", len(detected_names))
         results.extend(self._find_all_names(text, detected_names))
         
         # B. Address Logic (Strict Exclusion using Robust Normalization)
@@ -202,7 +192,7 @@ class PiiService:
                                 for entity in doc.entities:
                                     # Skip wage amounts (numbers followed by won/month)
                                     if re.search(r'^\d{1,3}(,\d{3})*\s*(won|원)', entity.text, re.IGNORECASE):
-                                        print(f"  [AZURE] Chunk {chunk_idx}: SKIPPED wage amount: {entity.text}")
+                                        logger.debug("Azure PII entity skipped as wage. chunk=%d", chunk_idx)
                                         continue
                                     
                                     # Adjust offset for chunked text
@@ -219,17 +209,16 @@ class PiiService:
                                         "length": entity.length,
                                         "confidence_score": entity.confidence_score
                                     })
-                                    print(f"  [AZURE] Chunk {chunk_idx}: {category}/{subcategory}: {entity.text[:30]}...")
+                                    logger.debug("Azure PII entity detected. chunk=%d category=%s subcategory=%s", chunk_idx, category, subcategory)
                             else:
-                                print(f"[AZURE] Chunk {chunk_idx} Error: {doc.error.message}")
+                                logger.warning("Azure PII chunk returned an error. chunk=%d", chunk_idx)
                     except Exception as chunk_error:
-                        print(f"[AZURE] Chunk {chunk_idx} failed: {chunk_error}")
+                        logger.warning("Azure PII chunk failed. chunk=%d error=%s", chunk_idx, type(chunk_error).__name__)
                         
                 print(f"[AZURE] Total found: {len(results)} entities")
                 
             except Exception as e:
-                print(f"[AZURE] Failed: {e}")
-                logger.error(f"Azure PII detection failed: {e}")
+                logger.error("Azure PII detection failed: %s", type(e).__name__)
         else:
             print("[AZURE] Client not initialized - using fallback only")
         
@@ -247,14 +236,14 @@ class PiiService:
         birthdate_results = self._detect_labor_sensitive(text)
         print(f"[CUSTOM] Birthdates/Addresses: {len(birthdate_results)}")
         for b in birthdate_results:
-            print(f"  - {b['category']}/{b.get('subcategory')}: '{b['text'][:40]}...' (offset={b['offset']}, len={b['length']})")
+            logger.debug("Custom labor PII detected. category=%s offset=%d length=%d", b['category'], b['offset'], b['length'])
         results.extend(birthdate_results)
         
         # C. Korean addresses with headers (소재지, 주소, Location)
         location_results = self._detect_labor_locations(text)
         print(f"[CUSTOM] Location Headers: {len(location_results)}")
         for loc in location_results:
-            print(f"  - Address: '{loc['text'][:40]}...' (offset={loc['offset']}, len={loc['length']})")
+            logger.debug("Custom labor address detected. offset=%d length=%d", loc['offset'], loc['length'])
         results.extend(location_results)
         
         # D. ID Numbers (Korean resident/business registration)
@@ -334,7 +323,7 @@ class PiiService:
             match_count += 1
             role = match.group(1)
             name = match.group(2).strip()
-            print(f"  Match {match_count}: Role='{role}' Name='{name}' (len={len(name)})")
+            logger.debug("Labor name candidate found. match=%d role=%s length=%d", match_count, role, len(name))
             
             # STRICT FILTERING TO AVOID GARBAGE
             # 1. Length check (before processing)
@@ -408,7 +397,7 @@ class PiiService:
 
             # 8. Final length check
             if 2 <= len(clean_name) <= 20:
-                print(f"    ✅ ACCEPTED: '{clean_name}'")
+                logger.debug("Labor name candidate accepted. length=%d", len(clean_name))
                 names.add(clean_name)
             else:
                 print(f"    ❌ Rejected: Final length check failed ({len(clean_name)})")
@@ -532,7 +521,7 @@ class PiiService:
         results = []
         if not names: return []
         
-        print(f"DEBUG: Searching text for names: {names}")
+        logger.debug("Searching OCR text for name candidates. count=%d", len(names))
         
         for name in names:
             if len(name) < 2: continue
@@ -585,10 +574,11 @@ class PiiService:
                         "subcategory": "Name",
                         "offset": mask_start,
                         "length": mask_len,
-                        "confidence_score": 0.99
+                        "confidence_score": 0.99,
+                        "partial_masked": True
                     })
             
-            print(f"DEBUG: Found {count} occurrences of '{name}'")
+            logger.debug("Name candidate occurrences found. count=%d", count)
 
         return results
 
@@ -624,7 +614,7 @@ class PiiService:
 
         target_clean = robust_normalize(target_address)
         
-        print(f"DEBUG: Scanning for addresses strict... TargetClean: {target_clean[:20]}...")
+        logger.debug("Strict address scan started. target_present=%s", bool(target_clean))
         
         for match in k_addr_pattern.finditer(text):
             full_addr = match.group().strip()
@@ -680,7 +670,7 @@ class PiiService:
 
             if match_found:
                 # It's the target property -> VISIBLE (Do not Mask)
-                print(f"DEBUG: Exclusion Match (Target): {full_addr}")
+                logger.debug("Target property address excluded from masking")
                 continue
             else:
                 # It's another address -> MASK
@@ -759,7 +749,7 @@ class PiiService:
         for idx, entity in enumerate(pii_entities):
             e_start = entity['offset']
             e_end = e_start + entity['length']
-            print(f"\nDEBUG: Entity {idx}: '{entity['text'][:30]}...' offset={e_start}, len={entity['length']}")
+            logger.debug("Mapping PII entity to OCR boxes. index=%d offset=%d length=%d", idx, e_start, entity['length'])
             
             # 1. Collect all sub-boxes for this entity
             entity_sub_boxes = [] # (page_idx, [x1, y1, x2, y2])
@@ -827,15 +817,16 @@ class PiiService:
                 u_y2 = max(b[3] for b in boxes)
                 
                 if self._is_safe_keyword(entity['text']):
-                    print(f"DEBUG: FILTERING OUT box for safe keyword: '{entity['text'][:40]}...'")
+                    logger.debug("PII box filtered as safe keyword. category=%s", entity['category'])
                     continue
                 
-                print(f"DEBUG: CREATING BOX for: '{entity['text'][:40]}...' page={pidx}, category={entity['category']}, box=[{u_x1:.3f}, {u_y1:.3f}, {u_x2:.3f}, {u_y2:.3f}]")
+                logger.debug("PII box created. page=%d category=%s", pidx, entity['category'])
                 pii_boxes.append({
                     "box_norm": [u_x1, u_y1, u_x2, u_y2],
                     "page_idx": pidx,
                     "category": entity['category'],
-                    "text": entity['text']
+                    "text": entity['text'],
+                    "partial_masked": entity.get("partial_masked", False)
                 })
 
         print(f"\nDEBUG: Total boxes created: {len(pii_boxes)}")

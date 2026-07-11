@@ -4,6 +4,9 @@ from app.services.storage import BlobStorageService
 from typing import List, Optional
 import urllib.parse
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 storage_service = BlobStorageService()
 
@@ -54,7 +57,7 @@ class HistoryService:
                             if filename:
                                 storage_service.delete_file(filename)
                         except Exception as e:
-                            print(f"Failed to delete blob for url {url}: {e}")
+                            logger.warning("Failed to delete an analysis blob: %s", type(e).__name__)
 
                 # 2. Manual Cascade: Delete related AuditLogs first
                 db.query(AuditLog).filter(AuditLog.analysis_id == analysis_id).delete()
@@ -65,7 +68,7 @@ class HistoryService:
                 return True
             except Exception as e:
                 db.rollback()
-                print(f"Error deleting analysis {analysis_id}: {e}")
+                logger.error("Failed to delete analysis record: %s", type(e).__name__)
                 return False
         return False
 

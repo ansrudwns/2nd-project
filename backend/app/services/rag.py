@@ -12,14 +12,24 @@ except ImportError:
     SearchClient = None
     VectorizedQuery = None
     AzureOpenAI = None
+    AzureKeyCredential = None
 
 logger = logging.getLogger(__name__)
 
 class RAGService:
+    CATEGORY_INDEXES = {
+        "laws": ("AZURE_SEARCH_INDEX_LAWS", "법령"),
+        "cases": ("AZURE_SEARCH_INDEX_CASES", "판례/사례"),
+        "forms": ("AZURE_SEARCH_INDEX_FORMS", "표준계약서 해설"),
+        "labor_laws": ("AZURE_SEARCH_INDEX_LABOR_LAWS", "노동법령"),
+        "labor_cases": ("AZURE_SEARCH_INDEX_LABOR_CASES", "노동 판례/사례"),
+        "labor_forms": ("AZURE_SEARCH_INDEX_LABOR_FORMS", "표준근로계약서 해설"),
+    }
+
     def __init__(self):
         self.endpoint = settings.AZURE_SEARCH_ENDPOINT
         self.key = settings.AZURE_SEARCH_KEY
-        self.credential = AzureKeyCredential(self.key) if self.key else None
+        self.credential = AzureKeyCredential(self.key) if self.key and AzureKeyCredential else None
         
         self.openai_client = None
         if settings.AZURE_OPENAI_API_KEY and settings.AZURE_OPENAI_ENDPOINT:
@@ -50,18 +60,18 @@ class RAGService:
 
     def search_category(self, category_key: str, query: str, vector: List[float] = None) -> List[str]:
         """
-        Targeted search for specific category: 'laws', 'cases', 'forms'
+        Targeted search for lease or labor legal sources.
         """
-        mapping = {
-            "laws": (settings.AZURE_SEARCH_INDEX_LAWS, "법령"),
-            "cases": (settings.AZURE_SEARCH_INDEX_CASES, "판례/사례"),
-            "forms": (settings.AZURE_SEARCH_INDEX_FORMS, "표준계약서 해설")
-        }
-        
-        if category_key not in mapping:
+        category = self.CATEGORY_INDEXES.get(category_key)
+        if not category:
+            logger.warning("Unsupported RAG category requested: %s", category_key)
             return []
-            
-        index_name, label = mapping[category_key]
+
+        setting_name, label = category
+        index_name = getattr(settings, setting_name, None)
+        if not index_name:
+            logger.warning("RAG index is not configured for category: %s", category_key)
+            return []
         
         # If vector not provided, generate it
         if not vector:
@@ -87,10 +97,11 @@ class RAGService:
         
         return results
 
-    def _search_index(self, index_name: str, query: str, category: str, vector: List[float] = []) -> List[str]:
+    def _search_index(self, index_name: str, query: str, category: str, vector: List[float] = None) -> List[str]:
         client = self._get_client(index_name)
         if not client:
-             return [f"[{category} Mock] '{query}' 관련 내용..."]
+             logger.warning("RAG search unavailable for category: %s", category)
+             return []
         
         vector_queries = None
         if vector and VectorizedQuery:

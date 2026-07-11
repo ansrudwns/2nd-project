@@ -29,6 +29,7 @@ class Registry(BaseModel):
     property_address: str = Field(..., description="표제부 소재지")
     owner_name: str = Field(..., description="갑구 최종 소유자")
     issue_date: str = Field(..., description="등기사항증명서 발급일")
+    building_usage: str = Field("", description="건축물 용도 또는 위반건축물 표기")
     rights: List[RegistryRight] = Field(default_factory=list, description="을구 권리 관계")
 
 # --- Analysis Result Wrapper ---
