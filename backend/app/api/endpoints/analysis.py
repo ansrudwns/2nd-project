@@ -134,10 +134,10 @@ async def analyze_documents(
 
             # Create Pydantic Object
             ctx['contract_obj'] = Contract(**c_data)
-            print(f"LLM Contract Extracted: {c_data.get('lessor_name')}, {c_data.get('deposit_amount')}")
+            logger.info("Contract fields extracted successfully")
             
         except Exception as e:
-            print(f"LLM Contract Extraction Failed: {e}")
+            logger.warning("Contract field extraction failed: %s", type(e).__name__)
             # Fallback Empty Object to prevent pipeline crash
             ctx['contract_obj'] = Contract(
                 address="추출 실패", lessor_name="", lessee_name="", deposit_amount=0, 
@@ -152,10 +152,10 @@ async def analyze_documents(
             r_data = json.loads(r_json)
             
             ctx['registry_obj'] = Registry(**r_data)
-            print(f"LLM Registry Extracted: {r_data.get('owner_name')}")
+            logger.info("Registry fields extracted successfully")
             
         except Exception as e:
-            print(f"LLM Registry Extraction Failed: {e}")
+            logger.warning("Registry field extraction failed: %s", type(e).__name__)
             ctx['registry_obj'] = Registry(
                 property_address="추출 실패", owner_name="", issue_date=""
             )
@@ -269,7 +269,7 @@ async def analyze_documents(
                 return "RENT"
             
             # Show first 200 chars for debugging
-            print(f"DEBUG: Text sample: {full_t[:200]}")
+            logger.debug("OCR text reconstructed. length=%d", len(full_t))
             
             # AGGRESSIVE keyword search - check for ANY Labor-related term
             labor_keywords = [
@@ -398,7 +398,7 @@ async def analyze_documents(
                     )
                     if 'rule_results' not in ctx: ctx['rule_results'] = []
                     ctx['rule_results'].append(rule_res)
-                    print(f"Toxic Clause Verified: {c_text[:20]}...")
+                    logger.debug("Toxic clause candidate verified")
         else:
             # Sequential Legacy
             print(f"🐢 [{mode_str} Mode] Processing Toxic Clauses (Lease)...")
@@ -438,9 +438,9 @@ async def analyze_documents(
                         ctx['rule_results'] = []
                         
                     ctx['rule_results'].append(rule_res)
-                    print(f"Toxic Clause Verified: {c_text[:20]}...")
+                    logger.debug("Toxic clause candidate verified")
                 else:
-                    print(f"Toxic Candidate Dismissed: {c_text[:20]}...")
+                    logger.debug("Toxic clause candidate dismissed")
 
         elapsed = time.time() - start_time
         print(f"⏱️ [Toxic Clause Check] Time Elapsed: {elapsed:.2f} seconds ({mode_str} Mode)")
@@ -1133,7 +1133,7 @@ async def analyze_labor_documents(
                     
                     # Partial Masking for Names
                     is_person = category in ['Person', 'HybridFallback']
-                    if is_person and len(b['text']) >= 2:
+                    if is_person and not b.get('partial_masked') and len(b['text']) >= 2:
                          x1, y1, x2, y2 = b['box_norm']
                          width = x2 - x1
                          char_w = width / len(b['text'])
@@ -1144,7 +1144,7 @@ async def analyze_labor_documents(
                     
                     final_boxes.append(b)
                 else:
-                    print(f"DEBUG ANALYSIS: FILTERING OUT category={category}: '{b['text'][:40]}...'")
+                    logger.debug("PII box filtered by category=%s", category)
             
             print(f"DEBUG ANALYSIS: Final boxes count: {len(final_boxes)} (filtered from {len(boxes)})")
             return final_boxes
@@ -1446,21 +1446,17 @@ async def analyze_labor_documents(
         target_lang = ctx.get('target_language', 'ko')
         if target_lang == 'ko': return
         
-        # Debug Logging to File
-        with open("debug_translation.txt", "a", encoding="utf-8") as f:
-            f.write(f"\n--- New Request ---\nDEBUG[step_translate] Target Lang: {target_lang}\n")
+        logger.debug("Labor translation started. target_language=%s", target_lang)
         
         llm = LLMService()
         failed = [r for r in ctx['rule_results'] if r.status == 'FAIL']
         
         # Ensure Summary exists
         summary_text = ctx.get('summary_text', '')
-        with open("debug_translation.txt", "a", encoding="utf-8") as f:
-            f.write(f"DEBUG[step_translate] Summary Len: {len(summary_text)}, Failed Rules: {len(failed)}\n")
+        logger.debug("Labor translation input prepared. summary_length=%d failed_rules=%d", len(summary_text), len(failed))
         
         if not summary_text and not failed:
-             with open("debug_translation.txt", "a", encoding="utf-8") as f:
-                 f.write("DEBUG[step_translate] Nothing to translate.\n")
+             logger.debug("Labor translation skipped because there is no content")
              return
 
         trans = llm.translate_analysis_result(summary_text, failed, target_lang)

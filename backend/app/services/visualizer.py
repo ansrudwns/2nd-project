@@ -1,9 +1,12 @@
 import io
+import logging
 from typing import List, Dict, Any
 from PIL import Image, ImageDraw
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from app.core.exceptions import AnalysisException, Stage
+
+logger = logging.getLogger(__name__)
 
 class VisualizerService:
     @staticmethod
@@ -122,7 +125,7 @@ class VisualizerService:
                     # NOTE: Rotation Handling
                     # If page is rotated, CropBox might be swapped relative to content?
                     prominent_rotation = page.get('/Rotate', 0)
-                    print(f"DEBUG: Page {i+1} Rotation: {prominent_rotation}, CropBox: {box}")
+                    logger.debug("Preparing PDF page. page=%d rotation=%s", i + 1, prominent_rotation)
 
                     # PRODUCTION MODE: Draw Solid Black
                     c.setFillColorRGB(0, 0, 0)
@@ -149,7 +152,7 @@ class VisualizerService:
                             final_x = page_base_x + x_rel
                             final_y = page_base_y + y_rel_from_bottom
 
-                            print(f"DEBUG VISUALIZER: Drawing PII box on page {i}: '{pii.get('text', '')[:30]}...' at ({final_x:.1f}, {final_y:.1f}), size ({rect_w:.1f}, {rect_h:.1f})")
+                            logger.debug("Drawing PII mask. page=%d category=%s", i, pii.get("category", "unknown"))
                             c.rect(final_x, final_y, rect_w, rect_h, fill=1, stroke=0)
                             
                         elif "box" in pii:

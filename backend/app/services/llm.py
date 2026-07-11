@@ -384,9 +384,7 @@ class LLMService:
             )
             content = response.choices[0].message.content.strip()
             
-            # Debug Log LLM Output
-            with open("debug_translation.txt", "a", encoding="utf-8") as f:
-                f.write(f"\nDEBUG[LLM Output]: {content[:500]}...\n")
+            logger.debug("Translation response received. length=%d", len(content))
 
             if content.startswith("```json"): content = content[7:]
             if content.endswith("```"): content = content[:-3]

@@ -35,3 +35,8 @@ build/
 
 # Backend Uploads
 backend/uploads/
+
+# Local runtime and debug artifacts
+backend/test.db
+backend/debug_translation.txt
+backend/app/services/_temp_*.py

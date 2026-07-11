@@ -26,6 +26,17 @@ class LaborRuleEngine:
         MIN_WAGE_MONTHLY = 2096270 # 2025 Standard for 209 hours
         
         salary = contract.salary
+
+        if not salary or salary <= 100000:
+            return RuleResult(
+                rule_id="MIN_WAGE",
+                status="UNKNOWN",
+                severity="MED",
+                title="최저임금 판단 불가",
+                evidence=RuleEvidence(
+                    detail="급여 금액 또는 지급 단위를 충분히 추출하지 못해 최저임금 준수 여부를 판단할 수 없습니다."
+                )
+            )
         
         # Simple heuristic: If salary is clearly monthly (over 1M) and below min wage
         if 100000 < salary < MIN_WAGE_MONTHLY:
@@ -46,7 +57,7 @@ class LaborRuleEngine:
             severity="INFO",
             title="최저임금 준수",
             evidence=RuleEvidence(
-                detail=f"급여가 최저임금 기준을 상회하거나 판단할 수 없습니다. (계약 급여: {salary:,}원)"
+                detail=f"추출된 월 급여가 2025년 월 환산 참고 기준을 상회합니다. (계약 급여: {salary:,}원)"
             )
         )
 
@@ -57,7 +68,18 @@ class LaborRuleEngine:
         """
         # This requires robust NLP parsing of 'work_hours' string, which is hard.
         # We rely on keyword detection for now.
-        hours_str = contract.work_hours
+        hours_str = (contract.work_hours or "").strip()
+
+        if not hours_str or hours_str.lower() in {"unknown", "none", "n/a"}:
+            return RuleResult(
+                rule_id="WORK_HOURS",
+                status="UNKNOWN",
+                severity="MED",
+                title="근로시간 판단 불가",
+                evidence=RuleEvidence(
+                    detail="소정근로시간을 충분히 추출하지 못해 법정 근로시간 준수 여부를 판단할 수 없습니다."
+                )
+            )
         
         if "60시간" in hours_str or "제한 없음" in hours_str:
              return RuleResult(
